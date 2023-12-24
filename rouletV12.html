@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<style>
+    /* ... (existing styles) */
+
+    /* Add these styles to reposition the table to the left */
+    #statistics-container {
+        float: left;
+        margin-right: 20px; /* Adjust the margin as needed */
+    }
+
+    /* Add these styles to position the chart to the right */
+    #chart-container {
+        float: left;
+    }
+</style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/1.0.2/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+
+        #result {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+
+        #earnings {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        #bet-amount {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        #spin-counter {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        #roulette-table {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-gap: 5px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .number {
+            width: 30px;
+            height: 30px;
+            border: 1px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px;
+            font-size: 14px;
+        }
+
+        .green {
+            background-color: green;
+            color: white;
+        }
+
+        .red {
+            background-color: red;
+            color: white;
+        }
+
+        .black {
+            background-color: black;
+            color: white;
+        }
+
+        .flash {
+            animation: flash 1s infinite alternate;
+        }
+
+        @keyframes flash {
+            0% {
+                background-color: yellow;
+            }
+            100% {
+                background-color: white;
+            }
+        }
+
+        #reset-button {
+            font-size: 16px;
+            margin-top: 20px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #stats-table {
+            margin-top: 20px;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        #stats-table th, #stats-table td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Roulette</h1>
+    <p>Your initial bet is $100 on Red, Good Luck! (a spin result of 37 is the 00) .</p>
+    <button onclick="spinWheel()">Spin the Wheel</button>
+    <div id="result"></div>
+    <div id="earnings">Total Earnings: $<span id="total-earnings">0</span></div>
+    <div id="bet-amount">Current Bet: $<span id="current-bet">100</span></div>
+    <div id="spin-counter">Spins: <span id="spin-count">0</span> (<span id="spin-color"></span>)</div>
+    <div id="average-earnings-per-spin">Average Earnings per Spin: $<span id="average-earnings">0</span></div>
+    <button id="reset-button" onclick="resetGame()">Reset Game</button>
+
+    <!-- Roulette Table -->
+    <div id="roulette-table">
+        <div class="number green">0</div>
+        <div class="number green">00</div>
+        <div class="number red">1</div>
+        <div class="number black">2</div>
+        <div class="number red">3</div>
+        <div class="number black">4</div>
+        <div class="number red">5</div>
+        <div class="number black">6</div>
+        <div class="number red">7</div>
+        <div class="number black">8</div>
+        <div class="number red">9</div>
+        <div class="number black">10</div>
+        <div class="number black">11</div>
+        <div class="number red">12</div>
+        <div class="number black">13</div>
+        <div class="number red">14</div>
+        <div class="number black">15</div>
+        <div class="number red">16</div>
+        <div class="number black">17</div>
+        <div class="number red">18</div>
+        <div class="number red">19</div>
+        <div class="number black">20</div>
+        <div class="number red">21</div>
+        <div class="number black">22</div>
+        <div class="number red">23</div>
+        <div class="number black">24</div>
+        <div class="number red">25</div>
+        <div class="number black">26</div>
+        <div class="number red">27</div>
+        <div class="number black">28</div>
+        <div class="number black">29</div>
+        <div class="number red">30</div>
+        <div class="number black">31</div>
+        <div class="number red">32</div>
+        <div class="number black">33</div>
+        <div class="number red">34</div>
+        <div class="number black">35</div>
+        <div class="number red">36</div>
+    </div>
+
+    <!-- Statistics Table -->
+    <div id="statistics-container">
+        <table id="stats-table">
+            <!-- ... (existing code) -->
+        </table>
+    </div>
+
+    <div id="chart-container">
+        <canvas id="earningsChart" width="1200" height="325"></canvas>
+    </div>
+
+
+    <table id="stats-table">
+        <thead>
+            <tr>
+                <th>Outcome</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="red">Red</td>
+                <td id="red-percentage">0%</td>
+            </tr>
+            <tr>
+                <td class="black">Black</td>
+                <td id="black-percentage">0%</td>
+            </tr>
+            <tr>
+                <td class="green">Green</td>
+                <td id="green-percentage">0%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        var earningsData = [];
+        var totalEarnings = 0;
+        var betAmount = 100;
+        var spinCount = 0;
+        var redCount = 0;
+        var blackCount = 0;
+        var greenCount = 0;
+        var originalTable = document.getElementById('roulette-table').innerHTML;
+
+        function spinWheel() {
+            // Increment spin counter
+            spinCount++;
+
+            // Simulate spinning the wheel
+            var result = Math.floor(Math.random() * 38); // Numbers from 0 to 37
+
+            // Check if the result is green (0 or 00), red, or black
+           
+           if (result === 0 || result === 37) {
+  		 colorClass = 'green';
+		 colorText = 'green';
+	   } else {
+    		if (result ===1 || result===3|| result===5 ||result===7||result===9||result===12||result===14||result===16|| +
+			result===18||result===19||result===21||result===23||result===25||result===27||result===30|| +
+		        result===32||result===34||result===36   ) {
+        	colorClass = 'red';
+        	colorText = 'red';
+    	  } else {
+        	colorClass = 'black';
+        	colorText = 'black';
+    	  }
+       }
+
+
+
+
+
+            // Display the result with flashing effect
+            var resultElement = document.getElementById('result');
+            resultElement.innerHTML = 'The wheel spins... and the result is: <span class="flash">' + result +
+                                      ' (<span class="' + colorClass + '">' + colorText + '</span>)</span>';
+
+           
+
+            // Check if the bet is won or lost
+            if (colorClass === 'red') {
+                resultElement.innerHTML += '<p style="color: red;">Congratulations! You win $' + betAmount + '.</p>';
+                totalEarnings += betAmount;
+                betAmount = 100; // Reset the bet amount after a win
+                redCount++;
+            } else if (colorClass === 'black') {
+                resultElement.innerHTML += '<p>Sorry, you lose. You lose $' + betAmount + '.</p>';
+                totalEarnings -= betAmount;
+                betAmount = 100; // Reset the bet amount after a win
+                blackCount++;
+            } else {
+                resultElement.innerHTML += '<p>Sorry, you lose. You lose $' + betAmount + '.</p>';
+                totalEarnings -= betAmount;
+                betAmount = 100; // Double the bet amount after a loss
+                greenCount++;
+            }
+
+            // Update and display total earnings
+            var totalEarningsElement = document.getElementById('total-earnings');
+            totalEarningsElement.textContent = totalEarnings;
+
+            // Update and display current bet amount
+            var currentBetElement = document.getElementById('current-bet');
+            currentBetElement.textContent = betAmount;
+
+            // Update and display spin counter
+            var spinCounterElement = document.getElementById('spin-count');
+            spinCounterElement.textContent = spinCount;
+
+            // Update and display spin color
+            var spinColorElement = document.getElementById('spin-color');
+            spinColorElement.textContent = colorText;
+
+            // Update and display statistics
+            updateStatistics();
+
+	    // Calculate average earnings per spin
+            var averageEarnings = totalEarnings / spinCount;
+
+            // Update the average earnings per spin on the UI
+            var averageEarningsElement = document.getElementById('average-earnings');
+            averageEarningsElement.textContent = averageEarnings.toFixed(2);
+
+            // Add earnings data for the chart
+            earningsData.push(averageEarnings);
+
+            // Update the line chart
+            updateChart();
+
+        }
+
+        function resetGame() {
+            totalEarnings = 0;
+            betAmount = 100;
+            spinCount = 0;
+            redCount = 0;
+            blackCount = 0;
+            greenCount = 0;
+            earningsData = [];
+            updateChart();
+
+            // Reset displayed values
+            var totalEarningsElement = document.getElementById('total-earnings');
+            totalEarningsElement.textContent = totalEarnings;
+
+            var currentBetElement = document.getElementById('current-bet');
+            currentBetElement.textContent = betAmount;
+
+            var spinCounterElement = document.getElementById('spin-count');
+            spinCounterElement.textContent = spinCount;
+
+            var resultElement = document.getElementById('result');
+            resultElement.innerHTML = '';
+
+            // Reset the color of all numbers on the roulette table
+            var numbers = document.querySelectorAll('#roulette-table .number');
+            numbers.forEach(function (number) {
+                number.className = 'number';
+            });
+
+            // Reset the roulette table to its original state
+            var rouletteTable = document.getElementById('roulette-table');
+            rouletteTable.innerHTML = originalTable;
+
+            // Reset the spin color display
+            var spinColorElement = document.getElementById('spin-color');
+            spinColorElement.textContent = '';
+
+            // Reset the statistics table
+            updateStatistics();
+
+            // Inform the player that the game has been reset
+            resultElement.innerHTML = '<p style="color: blue;">Game has been reset. Good luck!</p>';
+          
+            updateChart();       
+
+        }
+
+        function updateChart() {
+            // Get the chart canvas element
+            var ctx = document.getElementById('earningsChart').getContext('2d');
+
+            // Create a new chart if it doesn't exist, otherwise, update the existing chart
+            if (!window.earningsLineChart) {
+                window.earningsLineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({ length: earningsData.length }, (_, i) => i + 1),
+                        datasets: [{
+                            label: 'Average Earnings per Spin',
+                            data: earningsData,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            fill: false,
+			    pointRadius: 0,
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: [{
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Spin Number',
+                                }
+                            }],
+                            y: [{
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Average Earnings',
+                                }
+                            }]
+                        },
+
+                        
+
+
+                    }
+                });
+            } else {
+                window.earningsLineChart.data.labels = Array.from({ length: earningsData.length }, (_, i) => i + 1);
+                window.earningsLineChart.data.datasets[0].data = earningsData;
+                window.earningsLineChart.update();
+            }
+        }
+
+
+        function updateStatistics() {
+            var totalSpins = redCount + blackCount + greenCount;
+            var redPercentage = (redCount / totalSpins) * 100 || 0;
+            var blackPercentage = (blackCount / totalSpins) * 100 || 0;
+            var greenPercentage = (greenCount / totalSpins) * 100 || 0;
+
+            document.getElementById('red-percentage').textContent = redPercentage.toFixed(2) + '%';
+            document.getElementById('black-percentage').textContent = blackPercentage.toFixed(2) + '%';
+            document.getElementById('green-percentage').textContent = greenPercentage.toFixed(2) + '%';
+        }
+    </script>
+</body>
+</html>
+
+<canvas id="earningsChart" width="600" height="400"></canvas>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Business App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #description {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ChatGPT Business App</h1>
+
+  <div id="description">
+    <p>Provides a practice expected value scenario. Select the "Business Application Area" and "Complexity Level."</p>
+  </div>
+
+  <label for="businessArea">Business Application Area:</label>
+  <select id="businessArea">
+    <option value="operations">Operations / Supply Chain</option>
+    <option value="marketing">Marketing</option>
+    <option value="management">Management</option>
+    <option value="finance">Finance</option>
+  </select>
+  <br>
+
+  <label for="complexityLevel">Complexity Level:</label>
+  <select id="complexityLevel">
+    <option value="basic">Basic</option>
+    <option value="medium">Medium</option>
+    <option value="advanced">Advanced</option>
+  </select>
+  <br>
+
+  <button onclick="generateChatResponse()">Generate Chat Response</button>
+  <br>
+
+  <div id="chatResponse"></div>
+
+  <script>
+    // Sample API class (replace this with your actual implementation)
+    class ChatGPTAPI {
+      constructor(apiKey) {
+        this.apiKey = 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;
+        this.baseURL = 'https://dweltmantcu.github.io/Roulette/';
+      }
+
+      async sendRequest(prompt) {
+        try {
+          const response = await fetch(`${this.baseURL}/generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            body: JSON.stringify({ prompt }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error('Error sending request to ChatGPT API:', error);
+          throw error;
+        }
+      }
+    }
+
+    // Sample usage of the API class
+    const apiKey = 'your-api-key';
+    const chatGPT = new ChatGPTAPI(apiKey);
+
+    // Function to generate ChatGPT response
+    async function generateChatResponse() {
+      const businessAreaSelect = document.getElementById('businessArea');
+      const complexityLevelSelect = document.getElementById('complexityLevel');
+      const chatResponseDiv = document.getElementById('chatResponse');
+
+      const selectedBusinessArea = businessAreaSelect.value;
+      const selectedComplexityLevel = complexityLevelSelect.value;
+
+      // Construct a prompt based on the user's selections
+      const prompt = `Generate an easy expected value problem in ${selectedBusinessArea} for ${selectedComplexityLevel} difficulty.`;
+
+      try {
+        // Send request to ChatGPT
+        const response = await chatGPT.sendRequest(prompt);
+
+        // Display the response
+        chatResponseDiv.innerText = response.choices[0].text;
+      } catch (error) {
+        // Handle errors
+        console.error('Error generating ChatGPT response:', error);
+        chatResponseDiv.innerText = 'Error generating response. Please try again.';
+      }
+    }
+  </script>
+</body>
+</html>
+
+
+
